@@ -19,6 +19,7 @@ import { UIStore } from "ui/actions";
 import { setAnalysisError, setAnalysisPoints } from "ui/reducers/app";
 import { getAnalysisPointsForLocation } from "ui/reducers/app";
 import { ProtocolError } from "ui/state/app";
+import { createAnalysis } from "./thread/analysis";
 
 const { prefs } = require("ui/utils/prefs");
 
@@ -265,7 +266,6 @@ async function setMultiSourceLogpoint(
     sessionId,
     mapper,
     effectful: true,
-    locations: locations.map(location => ({ location })),
   };
   const points: PointDescription[] = [];
   const results: AnalysisEntry[] = [];
@@ -282,29 +282,38 @@ async function setMultiSourceLogpoint(
     }
   };
 
-  const shouldGetResults = condition || (!primitives && points.length < 200);
-  if (shouldGetResults) {
-    handler.onAnalysisResult = result => {
-      results.push(...result);
-      if (condition || !primitives) {
-        showLogpointsResult(logGroupId, result);
-      }
-    };
-  }
+  // Create the analysis
+  // At least find the points
+  const analysis = await createAnalysis(params);
 
-  try {
-    await analysisManager.runAnalysis(params, handler);
-  } catch (e: any) {
-    console.error("Cannot get analysis points", e);
-    saveAnalysisError(locations, condition, e?.code);
-    return;
-  }
+  await Promise.all(locations.map(location => analysis.addLocation(location)));
+  await analysis.findPoints().then(console.log);
+  await analysis.releaseAnalysis();
+  console.log("DONE");
 
-  // The analysis points may have arrived in any order, so we have to sort
-  // them after they arrive.
-  points.sort((a, b) => compareNumericStrings(a.point, b.point));
+  // const shouldGetResults = condition || (!primitives && points.length < 200);
+  // if (shouldGetResults) {
+  //     handler.onAnalysisResult = (result) => {
+  //         results.push(...result);
+  //         if (condition || !primitives) {
+  //             showLogpointsResult(logGroupId, result);
+  //         }
+  //     };
+  // }
 
-  saveLogpointHits(points, results, locations, condition);
+  // try {
+  //     await analysisManager.runAnalysis(params, handler);
+  // } catch (e: any) {
+  //     console.error("Cannot get analysis points", e);
+  //     saveAnalysisError(locations, condition, e?.code);
+  //     return;
+  // }
+
+  // // The analysis points may have arrived in any order, so we have to sort
+  // // them after they arrive.
+  // points.sort((a, b) => compareNumericStrings(a.point, b.point));
+
+  // saveLogpointHits(points, results, locations, condition);
 }
 
 function primitiveValues(text: string) {

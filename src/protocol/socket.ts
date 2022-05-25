@@ -7,6 +7,8 @@ import {
   PauseId,
   CommandParams,
   CommandResult,
+  analysisResult,
+  analysisPoints,
 } from "@recordreplay/protocol";
 import { isMock, mockEnvironment, waitForMockEnvironment } from "ui/utils/environment";
 
@@ -83,7 +85,14 @@ type SessionCallbacks = {
   onSocketClose: (willClose: boolean) => void;
 };
 
+type AnalysisCallbacks = {
+  onCreate: (command: CommandResult<"Analysis.createAnalysis">) => void;
+  onEvent: (message: any) => void;
+  onResults: (command: CommandResult<"Analysis.runAnalysis">) => void;
+};
+
 let gSessionCallbacks: SessionCallbacks | undefined;
+export let gAnalysisCallbacks: Map<string, AnalysisCallbacks> = new Map();
 let lastReceivedMessageTime = Date.now();
 
 export async function createSession(
@@ -210,6 +219,17 @@ export function addEventListener<M extends EventMethods>(
   event: M,
   handler: (params: EventParams<M>) => void
 ) {
+  if (event === "Analysis.analysisPoints") {
+    gEventListeners.set(event, ({ analysisId, points }: analysisPoints) => {
+      const callbacks = gAnalysisCallbacks.get(analysisId);
+      if (callbacks) {
+        callbacks.onEvent(points);
+      } else {
+        handler({ analysisId, points });
+      }
+    });
+    return;
+  }
   if (gEventListeners.has(event)) {
     throw new Error("Duplicate event listener: " + event);
   }
