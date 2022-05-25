@@ -48,6 +48,7 @@ const analysesSlice = createSlice({
     newAnalysis(state, action: PayloadAction<{ id: string }>) {
       analysesAdapter.addOne(state.analyses, {
         error: undefined,
+        location: undefined,
         id: action.payload.id,
         points: undefined,
         results: undefined,

@@ -1,4 +1,4 @@
-import { analysisResult, Location, PointDescription } from "@recordreplay/protocol";
+import { AnalysisEntry, Location, PointDescription } from "@recordreplay/protocol";
 import { AnalysisParams } from "protocol/analysisManager";
 import { gAnalysisCallbacks, sendMessage } from "protocol/socket";
 
@@ -20,7 +20,7 @@ interface FindAnalysisPointsResult {
 }
 
 interface RunAnalysisResult {
-  points: analysisResult[];
+  results: AnalysisEntry[];
   error: AnalysisError.TooManyPointsToRun | undefined;
 }
 
@@ -37,6 +37,7 @@ export const createAnalysis = async (params: AnalysisParams): Promise<Analysis> 
     params.sessionId
   );
   const points: PointDescription[] = [];
+  const results: AnalysisEntry[] = [];
   gAnalysisCallbacks.set(analysisId, {
     onEvent: receivedPoints => {
       points.push(...receivedPoints);
@@ -67,12 +68,12 @@ export const createAnalysis = async (params: AnalysisParams): Promise<Analysis> 
       try {
         await sendMessage("Analysis.runAnalysis", { analysisId }, params.sessionId);
         return {
-          points: [],
+          results,
           error: undefined,
         };
       } catch {
         return {
-          points: [],
+          results,
           error: AnalysisError.TooManyPointsToRun,
         };
       }

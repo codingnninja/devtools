@@ -7,8 +7,8 @@ import {
   PauseId,
   CommandParams,
   CommandResult,
-  analysisResult,
   analysisPoints,
+  analysisResult,
 } from "@recordreplay/protocol";
 import { isMock, mockEnvironment, waitForMockEnvironment } from "ui/utils/environment";
 
@@ -226,6 +226,17 @@ export function addEventListener<M extends EventMethods>(
         callbacks.onEvent(points);
       } else {
         handler({ analysisId, points });
+      }
+    });
+    return;
+  }
+  if (event === "Analysis.analysisResult") {
+    gEventListeners.set(event, ({ analysisId, results }: analysisResult) => {
+      const callbacks = gAnalysisCallbacks.get(analysisId);
+      if (callbacks) {
+        callbacks.onEvent(results);
+      } else {
+        handler({ analysisId, results });
       }
     });
     return;

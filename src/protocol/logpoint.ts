@@ -267,53 +267,29 @@ async function setMultiSourceLogpoint(
     mapper,
     effectful: true,
   };
-  const points: PointDescription[] = [];
-  const results: AnalysisEntry[] = [];
-  const handler: AnalysisHandler<void> = {};
-
-  handler.onAnalysisPoints = newPoints => {
-    points.push(...newPoints);
-    if (!condition) {
-      if (primitiveFronts) {
-        showPrimitiveLogpoints(logGroupId, newPoints, primitiveFronts);
-      } else {
-        showLogpointsLoading(logGroupId, newPoints);
-      }
-    }
-  };
 
   // Create the analysis
   // At least find the points
   const analysis = await createAnalysis(params);
 
   await Promise.all(locations.map(location => analysis.addLocation(location)));
-  await analysis.findPoints().then(console.log);
+  const { points, error } = await analysis.findPoints();
+
+  if (error || points.length > 200) {
+    return;
+  }
+
+  const { results } = await analysis.runAnalysis();
+  console.log({ results });
+
+  // Bail on running if we have too many points, either because we received an
+  // error, or because points.length > 200.
+  // OR
+  // Rather than running *this* analysis, create a *new* analysis which only has
+  // the found points which fall *inside* of our current focusRegion, and run *that*.
+
   await analysis.releaseAnalysis();
   console.log("DONE");
-
-  // const shouldGetResults = condition || (!primitives && points.length < 200);
-  // if (shouldGetResults) {
-  //     handler.onAnalysisResult = (result) => {
-  //         results.push(...result);
-  //         if (condition || !primitives) {
-  //             showLogpointsResult(logGroupId, result);
-  //         }
-  //     };
-  // }
-
-  // try {
-  //     await analysisManager.runAnalysis(params, handler);
-  // } catch (e: any) {
-  //     console.error("Cannot get analysis points", e);
-  //     saveAnalysisError(locations, condition, e?.code);
-  //     return;
-  // }
-
-  // // The analysis points may have arrived in any order, so we have to sort
-  // // them after they arrive.
-  // points.sort((a, b) => compareNumericStrings(a.point, b.point));
-
-  // saveLogpointHits(points, results, locations, condition);
 }
 
 function primitiveValues(text: string) {
