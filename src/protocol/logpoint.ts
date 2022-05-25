@@ -280,16 +280,12 @@ async function setMultiSourceLogpoint(
   }
 
   const { results } = await analysis.runAnalysis();
-  console.log({ results });
 
-  // Bail on running if we have too many points, either because we received an
-  // error, or because points.length > 200.
-  // OR
+  // MAYBE
   // Rather than running *this* analysis, create a *new* analysis which only has
   // the found points which fall *inside* of our current focusRegion, and run *that*.
 
   await analysis.releaseAnalysis();
-  console.log("DONE");
 }
 
 function primitiveValues(text: string) {
