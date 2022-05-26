@@ -368,7 +368,7 @@ class _ThreadFront {
     this.asyncPauses.length = 0;
     this.emit("paused", { point, hasFrames, time });
 
-    this._precacheResumeTargets();
+    // this._precacheResumeTargets();
   }
 
   timeWarpToPause(pause: Pause) {
@@ -386,7 +386,7 @@ class _ThreadFront {
     this.asyncPauses.length = 0;
     this.emit("paused", { point, hasFrames, time });
 
-    this._precacheResumeTargets();
+    // this._precacheResumeTargets();
   }
 
   async findSources(onSource: (source: newSource) => void) {
@@ -811,7 +811,7 @@ class _ThreadFront {
       if (--this.numPendingInvalidateCommands == 0) {
         this.invalidateCommandWaiters.forEach(resolve => resolve());
         this.invalidateCommandWaiters.length = 0;
-        this._precacheResumeTargets();
+        // this._precacheResumeTargets();
       }
     }
   }
