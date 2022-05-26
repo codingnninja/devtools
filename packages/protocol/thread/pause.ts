@@ -14,6 +14,7 @@ import {
   PauseData,
   repaintGraphicsResult,
   getAllBoundingClientRectsResult,
+  Result,
 } from "@replayio/protocol";
 
 import { client } from "../socket";
@@ -98,6 +99,8 @@ export class Pause {
   time: number | null;
   hasFrames: boolean | null;
   createWaiter: Promise<void> | null;
+  evaluations: Map<string, Result>;
+  fullObjects: Map<ObjectId, WiredObject>;
   frames: Map<FrameId, WiredFrame>;
   scopes: Map<ScopeId, WiredScope>;
   objects: Map<ObjectId, WiredObject>;
@@ -120,6 +123,8 @@ export class Pause {
 
     this.createWaiter = null;
 
+    this.evaluations = new Map();
+    this.fullObjects = new Map();
     this.frames = new Map();
     this.scopes = new Map();
     this.objects = new Map();
@@ -359,10 +364,13 @@ export class Pause {
   }
 
   async getObjectPreview(object: ObjectId) {
-    const { data } = await this.sendMessage(client.Pause.getObjectPreview, {
-      object,
-    });
-    this.addData(data);
+    const memo = this.fullObjects.get(object)
+    if (!memo) {
+      const { data } = await this.sendMessage(client.Pause.getObjectPreview, {
+        object,
+      });
+      this.addData(data);
+    }
     return this.objects.get(object)!;
   }
 
@@ -381,19 +389,23 @@ export class Pause {
   }
 
   async evaluate(frameId: FrameId | undefined, expression: string, pure: boolean) {
-    assert(this.createWaiter, "no createWaiter");
-    await this.createWaiter;
-    const { result } = frameId
-      ? await this.sendMessage(client.Pause.evaluateInFrame, {
-          frameId,
-          expression,
-          useOriginalScopes: true,
-          pure,
-        })
-      : await this.sendMessage(client.Pause.evaluateInGlobal, { expression, pure });
-    const { returned, exception, failed, data } = result;
-    this.addData(data);
-    return { returned, exception, failed } as EvaluationResult;
+    const key = `${frameId || "global"}:${expression}`
+    if (!this.evaluations.get(key)) {
+      assert(this.createWaiter, "no createWaiter");
+      await this.createWaiter;
+      const { result } = frameId
+        ? await this.sendMessage(client.Pause.evaluateInFrame, {
+            frameId,
+            expression,
+            useOriginalScopes: true,
+            pure,
+          })
+        : await this.sendMessage(client.Pause.evaluateInGlobal, { expression, pure });
+      const { data } = result;
+      this.addData(data);
+      this.evaluations.set(key, result)
+    }
+    return this.evaluations.get(key)!
   }
 
   // Synchronously get a DOM front for an object whose preview is known.
