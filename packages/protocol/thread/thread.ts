@@ -731,8 +731,8 @@ class _ThreadFront {
     } else if (rv.exception) {
       rv.exception = new ValueFront(pause, rv.exception);
     }
-    const { repaint } = await import("protocol/graphics");
-    repaint(true);
+    // const { repaint } = await import("protocol/graphics");
+    // repaint(true);
     return rv;
   }
 
