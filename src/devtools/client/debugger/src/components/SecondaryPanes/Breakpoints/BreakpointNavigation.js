@@ -34,7 +34,7 @@ function BreakpointNavigation({
 
   let next, prev;
 
-  if (executionPoint && !analysisPoints?.error && analysisPoints?.data.length > 0) {
+  if (executionPoint && !analysisPoints?.error && analysisPoints?.data && analysisPoints.data.length > 0) {
     prev = findLast(analysisPoints.data, p => compareNumericStrings(p.point, executionPoint) < 0);
     next = find(analysisPoints.data, p => compareNumericStrings(p.point, executionPoint) > 0);
   }
