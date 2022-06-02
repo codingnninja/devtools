@@ -1,6 +1,9 @@
-import { Location, PointDescription } from "@replayio/protocol";
+import { Location, PointDescription, PointRange } from "@replayio/protocol";
 import { createSlice, createSelector, PayloadAction } from "@reduxjs/toolkit";
-import { getLocationAndConditionKey } from "devtools/client/debugger/src/utils/breakpoint";
+import {
+  getAnalysisPointsKey,
+  getLocationAndConditionKey,
+} from "devtools/client/debugger/src/utils/breakpoint";
 import { RecordingTarget } from "protocol/thread/thread";
 import { getSystemColorSchemePreference } from "ui/utils/environment";
 import { getFocusRegion, getZoomRegion } from "ui/reducers/timeline";
@@ -31,6 +34,7 @@ import {
   isPointInRegions,
   isTimeInRegions,
   overlap,
+  rangeForFocusRegion,
   startTimeForFocusRegion,
 } from "ui/utils/timeline";
 import { AnalysisError } from "protocol/thread/analysis";
@@ -162,10 +166,11 @@ const appSlice = createSlice({
         analysisPoints: PointDescription[];
         location: Location;
         condition?: string;
+        range?: PointRange;
       }>
     ) {
-      const { analysisPoints, location, condition = "" } = action.payload;
-      const id = getLocationAndConditionKey(location, condition);
+      const { analysisPoints, location, condition = "", range } = action.payload;
+      const id = getAnalysisPointsKey(location, condition, range);
 
       state.analysisPoints[id] = {
         data: analysisPoints,
@@ -178,11 +183,12 @@ const appSlice = createSlice({
         location: Location;
         condition?: string;
         error: AnalysisError;
+        range?: PointRange;
       }>
     ) {
-      const { location, condition = "", error } = action.payload;
+      const { location, condition = "", error, range } = action.payload;
 
-      const id = getLocationAndConditionKey(location, condition);
+      const id = getAnalysisPointsKey(location, condition, range);
 
       state.analysisPoints[id] = {
         data: undefined,
@@ -370,9 +376,10 @@ export const getAnalysisPointsForLocation = (
   if (!location) {
     return undefined;
   }
-  const key = getLocationAndConditionKey(location, condition);
-  const points = state.app.analysisPoints[key];
   const focusRegion = getFocusRegion(state);
+
+  const key = getAnalysisPointsKey(location, condition, rangeForFocusRegion(focusRegion));
+  const points = state.app.analysisPoints[key];
   if (!points) {
     return undefined;
   }

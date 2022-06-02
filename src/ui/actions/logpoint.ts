@@ -29,7 +29,8 @@ import {
   analysisResultsRequested,
 } from "devtools/client/debugger/src/reducers/breakpoints";
 import { getFocusRegion } from "ui/reducers/timeline";
-import { UnsafeFocusRegion } from "ui/state/timeline";
+import { FocusRegion, UnsafeFocusRegion } from "ui/state/timeline";
+import { rangeForFocusRegion } from "ui/utils/timeline";
 
 // TODO Ideally this file shouldn't know about a Redux store at all.
 // Currently, it dispatches actions and reads state once.
@@ -121,7 +122,8 @@ function saveLogpointHits(
   points: PointDescription[],
   results: AnalysisEntry[],
   locations: Location[],
-  condition: string
+  condition: string,
+  focusRegion: FocusRegion
 ) {
   if (condition) {
     points = points.filter(point =>
@@ -129,13 +131,27 @@ function saveLogpointHits(
     );
   }
   for (const location of locations) {
-    store.dispatch(setAnalysisPoints({ analysisPoints: points, location, condition }));
+    store.dispatch(
+      setAnalysisPoints({
+        analysisPoints: points,
+        location,
+        condition,
+        range: rangeForFocusRegion(focusRegion),
+      })
+    );
   }
 }
 
-export function saveAnalysisError(locations: Location[], condition: string, error: AnalysisError) {
+export function saveAnalysisError(
+  locations: Location[],
+  condition: string,
+  focusRegion: FocusRegion,
+  error: AnalysisError
+) {
   for (const location of locations) {
-    store.dispatch(setAnalysisError({ location, condition, error }));
+    store.dispatch(
+      setAnalysisError({ location, condition, error, range: rangeForFocusRegion(focusRegion) })
+    );
   }
 }
 
@@ -373,7 +389,7 @@ async function setMultiSourceLogpoint(
     }
 
     // TODO Remove this and redo Redux logic
-    saveLogpointHits(points, analysisResults, locations, condition);
+    saveLogpointHits(points, analysisResults, locations, condition, focusRegion);
 
     // MAYBE
     // Rather than running *this* analysis, create a *new* analysis which only has

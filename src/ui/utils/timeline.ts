@@ -1,4 +1,4 @@
-import { TimeStampedPoint, TimeStampedPointRange } from "@replayio/protocol";
+import { PointRange, TimeStampedPoint, TimeStampedPointRange } from "@replayio/protocol";
 import { clamp, sortedIndexBy, sortedLastIndexBy } from "lodash";
 import { FocusRegion, UnsafeFocusRegion, ZoomRegion } from "ui/state/timeline";
 import { features } from "ui/utils/prefs";
@@ -33,6 +33,16 @@ export function endTimeForFocusRegion(focusRegion: FocusRegion) {
   return features.softFocus
     ? (focusRegion as UnsafeFocusRegion).end.time
     : (focusRegion as UnsafeFocusRegion).endTime;
+}
+
+export function rangeForFocusRegion(focusRegion: FocusRegion | null): PointRange | undefined {
+  if (!focusRegion) {
+    return;
+  }
+  const unsafe = focusRegion as UnsafeFocusRegion;
+  if (unsafe.start.point !== "" && unsafe.end.point !== "") {
+    return { begin: unsafe.start.point, end: unsafe.end.point };
+  }
 }
 
 // Get the position of a time on the visible part of the timeline,

@@ -1,4 +1,9 @@
-import { AnalysisEntry, createAnalysisParameters, Location, PointDescription } from "@replayio/protocol";
+import {
+  AnalysisEntry,
+  createAnalysisParameters,
+  Location,
+  PointDescription,
+} from "@replayio/protocol";
 import { AnalysisParams } from "../analysisManager";
 import { gAnalysisCallbacks, sendMessage } from "../socket";
 
@@ -39,7 +44,11 @@ export const createAnalysis = async (
   if (params.range) {
     protocolParams.range = params.range;
   }
-  const { analysisId } = await sendMessage("Analysis.createAnalysis", protocolParams, params.sessionId);
+  const { analysisId } = await sendMessage(
+    "Analysis.createAnalysis",
+    protocolParams,
+    params.sessionId
+  );
   const points: PointDescription[] = [];
   const results: AnalysisEntry[] = [];
   gAnalysisCallbacks.set(analysisId, {

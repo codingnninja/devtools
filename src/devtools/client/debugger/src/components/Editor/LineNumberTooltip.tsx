@@ -13,10 +13,11 @@ import hooks from "ui/hooks";
 import { Nag } from "ui/hooks/users";
 import { selectors } from "ui/reducers";
 import { setAnalysisPoints, setHoveredLineNumberLocation } from "ui/reducers/app";
-import { pointsReceived } from "ui/reducers/timeline";
+import { getFocusRegion, pointsReceived } from "ui/reducers/timeline";
 import { AnalysisPayload } from "ui/state/app";
 import { prefs, features } from "ui/utils/prefs";
 import { trackEvent } from "ui/utils/telemetry";
+import { rangeForFocusRegion } from "ui/utils/timeline";
 import { shouldShowNag } from "ui/utils/user";
 
 import { getHitCountsForSelectedSource, getSelectedSource } from "../../reducers/sources";
@@ -96,6 +97,7 @@ function runAnalysisOnLine(line: number): UIThunkAction {
     // time, maybe it's time to add some new things to the `protocol` folder.
     const state = getState();
     const source = getSelectedSource(state);
+    const focusRegion = getFocusRegion(state);
 
     if (!source) {
       return;
@@ -163,6 +165,7 @@ function runAnalysisOnLine(line: number): UIThunkAction {
         setAnalysisPoints({
           location,
           analysisPoints: points,
+          range: rangeForFocusRegion(focusRegion),
         })
       );
     } finally {

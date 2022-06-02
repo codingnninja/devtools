@@ -2,7 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at <http://mozilla.org/MPL/2.0/>. */
 
-import type { Location } from "@replayio/protocol";
+import type { Location, PointRange } from "@replayio/protocol";
+import compact from "lodash/compact";
 import sortBy from "lodash/sortBy";
 import type { UIState } from "ui/state";
 
@@ -37,6 +38,14 @@ export function getLocationKey(location: SourceLocation & { scriptId?: string })
   const { sourceId, line, column } = location;
   const columnString = column || "";
   return `${sourceId || location.scriptId}:${line}:${columnString}`;
+}
+
+export function getAnalysisPointsKey(
+  location: SourceLocation,
+  condition: string | undefined,
+  range: PointRange | undefined
+) {
+  return compact([getLocationKey(location), condition, range?.begin, range?.end]).join(":");
 }
 
 export function getLocationAndConditionKey(location: SourceLocation, condition: string) {

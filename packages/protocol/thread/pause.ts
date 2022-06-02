@@ -547,9 +547,14 @@ export class Pause {
 
   async getFrameSteps(frameId: FrameId) {
     if (!this.frameSteps.has(frameId)) {
-      const { steps } = await this.sendMessage(client.Pause.getFrameSteps, {
-        frameId,
-      });
+      let steps: PointDescription[] = [];
+      try {
+        steps = (
+          await this.sendMessage(client.Pause.getFrameSteps, {
+            frameId,
+          })
+        ).steps;
+      } catch {}
       for (const step of steps) {
         this.ThreadFront.updateMappedLocation(step.frame);
       }
