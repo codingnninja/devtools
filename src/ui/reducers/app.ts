@@ -34,6 +34,7 @@ import {
   startTimeForFocusRegion,
 } from "ui/utils/timeline";
 import { AnalysisError } from "protocol/thread/analysis";
+import { setFocusRegion } from "ui/reducers/timeline";
 
 export const initialAppState: AppState = {
   mode: "devtools",
@@ -92,6 +93,7 @@ const appSlice = createSlice({
       );
       state.loadedRegions = action.payload;
       state.recordingDuration = recordingDuration;
+      state.analysisPoints = {};
 
       // This is inferred by an interval that checks the amount of time since the last update.
       // Whenever a new update comes in, this state should be reset.
@@ -229,6 +231,11 @@ const appSlice = createSlice({
     },
     setAppMode(state, action: PayloadAction<AppMode>) {
       state.mode = action.payload;
+    },
+  },
+  extraReducers: {
+    [setFocusRegion.type](state) {
+      state.analysisPoints = {};
     },
   },
 });

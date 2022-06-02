@@ -30,7 +30,7 @@ function BreakpointNavigation({
       seek(point.point, point.time, true);
     }
   };
-  const isEmpty = analysisPoints && (analysisPoints.error || analysisPoints.data.length == 0);
+  const isEmpty = analysisPoints && (analysisPoints.error || analysisPoints.data?.length == 0);
 
   let next, prev;
 
@@ -40,7 +40,7 @@ function BreakpointNavigation({
   }
 
   useEffect(() => {
-    if (analysisPoints) {
+    if (analysisPoints?.data) {
       trackEvent(analysisPoints.data.length > 0 ? "breakpoint.has_hits" : "breakpoint.no_hits", {
         hits: analysisPoints.data.length,
       });

@@ -297,11 +297,21 @@ export function filterToFocusRegion<T extends TimeStampedPoint>(
     return sortedPoints;
   }
 
-  const startTime = startTimeForFocusRegion(focusRegion);
-  const endTime = endTimeForFocusRegion(focusRegion);
+  let startIndex: number;
+  let endIndex: number;
+  if (features.softFocus) {
+    const startPoint = (focusRegion as UnsafeFocusRegion).start.point;
+    const endPoint = (focusRegion as UnsafeFocusRegion).end.point;
 
-  const startIndex = sortedIndexBy(sortedPoints, { time: startTime, point: "" }, p => p.time);
-  const endIndex = sortedLastIndexBy(sortedPoints, { time: endTime, point: "" }, p => p.time);
+    startIndex = sortedIndexBy(sortedPoints, { time: 0, point: startPoint }, p => BigInt(p.point));
+    endIndex = sortedLastIndexBy(sortedPoints, { time: 0, point: endPoint }, p => BigInt(p.point));
+  } else {
+    const startTime = startTimeForFocusRegion(focusRegion);
+    const endTime = endTimeForFocusRegion(focusRegion);
+
+    startIndex = sortedIndexBy(sortedPoints, { time: startTime, point: "" }, p => p.time);
+    endIndex = sortedLastIndexBy(sortedPoints, { time: endTime, point: "" }, p => p.time);
+  }
 
   return sortedPoints.slice(startIndex, endIndex);
 }

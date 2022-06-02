@@ -28,6 +28,8 @@ import {
   analysisResultsReceived,
   analysisResultsRequested,
 } from "devtools/client/debugger/src/reducers/breakpoints";
+import { getFocusRegion } from "ui/reducers/timeline";
+import { UnsafeFocusRegion } from "ui/state/timeline";
 
 // TODO Ideally this file shouldn't know about a Redux store at all.
 // Currently, it dispatches actions and reads state once.
@@ -251,6 +253,7 @@ async function setMultiSourceLogpoint(
 ) {
   const primitives = primitiveValues(text);
   const primitiveFronts = primitives?.map(literal => createPrimitiveValueFront(literal));
+  const focusRegion = getFocusRegion(store.getState());
 
   if (primitiveFronts) {
     // TODO We're getting an _array_ of locations, but only using the first one?
@@ -275,6 +278,16 @@ async function setMultiSourceLogpoint(
     effectful: true,
     locations: locations.map(location => ({ location })),
   };
+
+  if (focusRegion) {
+    const unsafe = focusRegion as UnsafeFocusRegion;
+    if (unsafe.start.point !== "" && unsafe.end.point !== "") {
+      params.range = {
+        begin: unsafe.start.point,
+        end: unsafe.end.point,
+      };
+    }
+  }
 
   let analysis: Analysis;
   try {

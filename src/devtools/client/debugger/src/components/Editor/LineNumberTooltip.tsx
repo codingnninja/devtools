@@ -13,6 +13,7 @@ import hooks from "ui/hooks";
 import { Nag } from "ui/hooks/users";
 import { selectors } from "ui/reducers";
 import { setAnalysisPoints, setHoveredLineNumberLocation } from "ui/reducers/app";
+import { pointsReceived } from "ui/reducers/timeline";
 import { AnalysisPayload } from "ui/state/app";
 import { prefs, features } from "ui/utils/prefs";
 import { trackEvent } from "ui/utils/telemetry";
@@ -157,6 +158,7 @@ function runAnalysisOnLine(line: number): UIThunkAction {
           points,
         })
       );
+      dispatch(pointsReceived(points));
       dispatch(
         setAnalysisPoints({
           location,
