@@ -399,7 +399,6 @@ async function getSourceActorBreakpointHitCounts(
   { id }: { id: string },
   lineNumber: number,
   focusRegion: FocusRegion | null,
-  onFailure?: (e: any) => void
 ) {
   const locations = await ThreadFront.getBreakpointPositionsCompressed(id);
   // See `source-actors` where MAX_LINE_HITS_TO_FETCH is defined for an
@@ -422,7 +421,7 @@ async function getSourceActorBreakpointHitCounts(
             endPoint: (focusRegion as UnsafeFocusRegion).end.point,
           }
         : null
-    ).catch(onFailure)),
+    )),
   };
 }
 

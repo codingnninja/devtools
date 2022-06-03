@@ -15,7 +15,7 @@ import { selectors } from "ui/reducers";
 import { setAnalysisPoints, setHoveredLineNumberLocation } from "ui/reducers/app";
 import { AnalysisPayload } from "ui/state/app";
 import { UnsafeFocusRegion } from "ui/state/timeline";
-import { prefs, features } from "ui/utils/prefs";
+import { features } from "ui/utils/prefs";
 import { trackEvent } from "ui/utils/telemetry";
 import { shouldShowNag } from "ui/utils/user";
 
@@ -31,23 +31,6 @@ import {
 import StaticTooltip from "./StaticTooltip";
 
 export const AWESOME_BACKGROUND = `linear-gradient(116.71deg, #FF2F86 21.74%, #EC275D 83.58%), linear-gradient(133.71deg, #01ACFD 3.31%, #F155FF 106.39%, #F477F8 157.93%, #F33685 212.38%), #007AFF`;
-
-function getTextAndWarning(analysisPoints?: AnalysisPayload, analysisPointsCount?: number) {
-  if (analysisPoints?.error) {
-    return {
-      showWarning: false,
-      text:
-        (analysisPoints.error as AnalysisError) === AnalysisError.TooManyPointsToFind
-          ? "10k+ hits"
-          : "Error",
-    };
-  }
-
-  const points = analysisPointsCount || 0;
-  const text = `${points} hit${points == 1 ? "" : "s"}`;
-  const showWarning = points > 200;
-  return { showWarning, text };
-}
 
 function Wrapper({
   children,
@@ -192,21 +175,16 @@ export default function LineNumberTooltip({
   const indexed = useSelector(selectors.getIsIndexed);
   const hitCounts = useSelector(getHitCountsForSelectedSource);
   const source = useSelector(getSelectedSource);
-  const analysisPoints = useSelector(selectors.getPointsForHoveredLineNumber);
   const breakpoints = useSelector(selectors.getBreakpointsList);
 
-  let analysisPointsCount: number | undefined;
+  let hits: number | undefined;
 
-  if (codeHeatMaps) {
-    if (lastHoveredLineNumber.current && hitCounts) {
-      const lineHitCounts = minBy(
-        hitCounts.filter(hitCount => hitCount.location.line === lastHoveredLineNumber.current),
-        b => b.location.column
-      );
-      analysisPointsCount = lineHitCounts?.hits;
-    }
-  } else {
-    analysisPointsCount = analysisPoints?.data?.length;
+  if (lastHoveredLineNumber.current && hitCounts) {
+    const lineHitCounts = minBy(
+      hitCounts.filter(hitCount => hitCount.location.line === lastHoveredLineNumber.current),
+      b => b.location.column
+    );
+    hits = lineHitCounts?.hits;
   }
 
   useEffect(() => {
@@ -226,18 +204,7 @@ export default function LineNumberTooltip({
       }
       setTimeout(() => {
         if (lineNumber === lastHoveredLineNumber.current) {
-          if (codeHeatMaps) {
-            dispatch(
-              // TODO This is bad API design. Instead of passing in an `onFailure` callback,
-              // this action  should return a promise
-              setBreakpointHitCounts(source!.id, lineNumber, () => {
-                setCodeHeatMaps(false);
-                dispatch(runAnalysisOnLine(lineNumber));
-              })
-            );
-          } else {
-            dispatch(runAnalysisOnLine(lineNumber));
-          }
+          dispatch(setBreakpointHitCounts(source!.id, lineNumber, () => {}));
         }
       }, 200);
       dispatch(updateHoveredLineNumber(lineNumber));
@@ -257,13 +224,11 @@ export default function LineNumberTooltip({
   }, [codeHeatMaps, dispatch, editor.codeMirror, source]);
 
   useEffect(() => {
-    if (analysisPointsCount) {
-      trackEvent(
-        analysisPointsCount ? "breakpoint.preview_has_hits" : "breakpoint.preview_no_hits"
-      );
-      trackEvent("breakpoint.preview_hits", { hitsCount: analysisPointsCount || null });
+    if (hits) {
+      trackEvent(hits ? "breakpoint.preview_has_hits" : "breakpoint.preview_no_hits");
+      trackEvent("breakpoint.preview_hits", { hitsCount: hits || null });
     }
-  }, [analysisPointsCount]);
+  }, [hits]);
 
   if (
     breakpoints.some(
@@ -280,7 +245,7 @@ export default function LineNumberTooltip({
     return null;
   }
 
-  if (!indexed || analysisPointsCount === undefined) {
+  if (!indexed || hits === undefined) {
     return (
       <StaticTooltip targetNode={targetNode}>
         <Wrapper loading>{!indexed ? "Indexing…" : "Loading…"}</Wrapper>
@@ -288,7 +253,8 @@ export default function LineNumberTooltip({
     );
   }
 
-  const { text, showWarning } = getTextAndWarning(analysisPoints, analysisPointsCount);
+  const text = `${hits} hit${hits == 1 ? "" : "s"}`;
+  const showWarning = hits > 200;
   return (
     <StaticTooltip targetNode={targetNode}>
       <Wrapper showWarning={showWarning}>{text}</Wrapper>
